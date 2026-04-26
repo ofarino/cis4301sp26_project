@@ -1,3 +1,5 @@
+from uuid import MAX
+
 from MARIADB_CREDS import DB_CONFIG
 from mariadb import connect
 from models.RentalHistory import RentalHistory
@@ -17,11 +19,19 @@ cur = conn.cursor()
 
 def add_item(new_item: Item = None):
     """
+    i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price
     new_item - An Item object containing a new item to be inserted into the DB in the item table.
         new_item and its attributes will never be None.
     """
-    cur.execute("INSERT INTO item (item_id, title, description, price, start_year) VALUES (?, ?, ?, ?, ?)",
-                (new_item.item_id, new_item.title, new_item.description, new_item.price, new_item.start_year))
+
+    # Get today's date for i_rec_start_date
+    new_date = date.today().isoformat()
+
+    # Get the max i_item_sk and add 1 to get the new i_item_sk
+    cur.execute("SELECT MAX(i_item_sk) FROM item")
+    new_sk = cur.fetchone()[0] + 1
+    cur.execute("INSERT INTO item (i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (new_sk, new_item.i_item_id, new_date, new_item.i_product_name, new_item.i_brand, new_item.i_class, new_item.i_category, new_item.i_manufact, new_item.i_current_price))
 
 
 def add_customer(new_customer: Customer = None):
