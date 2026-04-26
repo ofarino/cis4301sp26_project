@@ -48,8 +48,11 @@ def add_customer(new_customer: Customer = None):
     name_split = new_customer.c_first_name.split(" ")
     new_first_name = name_split[0]
     new_last_name = name_split[1]
-    cur.execute("INSERT INTO customer (c_customer_sk, c_customer_id, c_first_name, c_last_name, c_email_address) VALUES (?, ?, ?, ?, ?)",
-                (new_sk, new_customer.c_customer_id, new_first_name, new_last_name, new_customer.c_email_address))
+
+    # NOT DONE parse address to get c_current_addr_sk
+
+    cur.execute("INSERT INTO customer (c_customer_sk, c_customer_id, c_first_name, c_last_name, c_email_address, c_current_addr_sk) VALUES (?, ?, ?, ?, ?, ?)",
+                (new_sk, new_customer.c_customer_id, new_first_name, new_last_name, new_customer.c_email_address, new_customer.c_current_addr_sk))
 
 
 def edit_customer(original_customer_id: str = None, new_customer: Customer = None):
@@ -57,9 +60,28 @@ def edit_customer(original_customer_id: str = None, new_customer: Customer = Non
     original_customer_id - A string containing the customer id for the customer to be edited.
     new_customer - A Customer object containing attributes to update. If an attribute is None, it should not be altered.
     """
-    cur.execute("UPDATE customer SET c_first_name = ?, c_last_name = ?, c_email_address = ? WHERE c_customer_id = ?",
-                (new_customer.c_first_name, new_customer.c_last_name, new_customer.c_email_address, original_customer_id))
+    if new_customer.name is not None:
+        name_split = new_customer.c_first_name.split(" ")
+        new_first_name = name_split[0]
+        new_last_name = name_split[1]
 
+        cur.execute("UPDATE customer SET c_first_name = ?, c_last_name = ? WHERE c_customer_id = ?",
+                    (new_first_name, new_last_name, original_customer_id))
+
+    if new_customer.c_email_address is not None:
+        cur.execute("UPDATE customer SET c_email_address = ? WHERE c_customer_id = ?",
+                    (new_customer.c_email_address, original_customer_id))
+    if new_customer.c_current_addr_sk is not None:
+          street_number, street_name, city, state, zip_code = [
+            part.strip() for part in new_customer.c_current_addr_sk.split(",")
+    ]
+
+    cur.execute("UPDATE customer_address SET street_number = ?, street_name = ?, city = ?, state = ?, zip_code = ? WHERE c_customer_id = ?",
+                (street_number, street_name, city, state, zip_code, original_customer_id))
+    
+    if new_customer.c_customer_id is not None:
+        cur.execute("UPDATE customer SET c_customer_id = ? WHERE c_customer_id = ?",
+                    (new_customer.c_customer_id, original_customer_id))
 
 
 def rent_item(item_id: str = None, customer_id: str = None):
