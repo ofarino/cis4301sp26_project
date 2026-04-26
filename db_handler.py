@@ -20,7 +20,8 @@ def add_item(new_item: Item = None):
     new_item - An Item object containing a new item to be inserted into the DB in the item table.
         new_item and its attributes will never be None.
     """
-    raise NotImplementedError("you must implement this function")
+    cur.execute("INSERT INTO item (item_id, title, description, price, start_year) VALUES (?, ?, ?, ?, ?)",
+                (new_item.item_id, new_item.title, new_item.description, new_item.price, new_item.start_year))
 
 
 def add_customer(new_customer: Customer = None):
