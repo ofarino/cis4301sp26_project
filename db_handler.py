@@ -25,11 +25,13 @@ def add_item(new_item: Item = None):
 
 
 def add_customer(new_customer: Customer = None):
+
     """
     new_customer - A Customer object containing a new customer to be inserted into the DB in the customer table.
         new_customer and its attributes will never be None.
     """
-    raise NotImplementedError("you must implement this function")
+    cur.execute("INSERT INTO customer (customer_id, first_name, last_name, email) VALUES (?, ?, ?, ?)",
+                (new_customer.customer_id, new_customer.first_name, new_customer.last_name, new_customer.email))
 
 
 def edit_customer(original_customer_id: str = None, new_customer: Customer = None):
@@ -37,7 +39,9 @@ def edit_customer(original_customer_id: str = None, new_customer: Customer = Non
     original_customer_id - A string containing the customer id for the customer to be edited.
     new_customer - A Customer object containing attributes to update. If an attribute is None, it should not be altered.
     """
-    raise NotImplementedError("you must implement this function")
+    cur.execute("UPDATE customer SET first_name = ?, last_name = ?, email = ? WHERE customer_id = ?",
+                (new_customer.first_name, new_customer.last_name, new_customer.email, original_customer_id))
+
 
 
 def rent_item(item_id: str = None, customer_id: str = None):
