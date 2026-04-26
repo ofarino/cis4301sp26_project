@@ -37,11 +37,19 @@ def add_item(new_item: Item = None):
 def add_customer(new_customer: Customer = None):
 
     """
+    c_customer_sk, c_customer_id, c_first_name, c_last_name, c_email_address, c_current_addr_sk
     new_customer - A Customer object containing a new customer to be inserted into the DB in the customer table.
         new_customer and its attributes will never be None.
     """
-    cur.execute("INSERT INTO customer (customer_id, first_name, last_name, email) VALUES (?, ?, ?, ?)",
-                (new_customer.customer_id, new_customer.first_name, new_customer.last_name, new_customer.email))
+    cur.execute("SELECT MAX(c_customer_sk) FROM customer")
+    new_sk = cur.fetchone()[0] + 1
+
+    # split new_customer.name to get first and last name
+    name_split = new_customer.c_first_name.split(" ")
+    new_first_name = name_split[0]
+    new_last_name = name_split[1]
+    cur.execute("INSERT INTO customer (c_customer_sk, c_customer_id, c_first_name, c_last_name, c_email_address) VALUES (?, ?, ?, ?, ?)",
+                (new_sk, new_customer.c_customer_id, new_first_name, new_last_name, new_customer.c_email_address))
 
 
 def edit_customer(original_customer_id: str = None, new_customer: Customer = None):
@@ -49,8 +57,8 @@ def edit_customer(original_customer_id: str = None, new_customer: Customer = Non
     original_customer_id - A string containing the customer id for the customer to be edited.
     new_customer - A Customer object containing attributes to update. If an attribute is None, it should not be altered.
     """
-    cur.execute("UPDATE customer SET first_name = ?, last_name = ?, email = ? WHERE customer_id = ?",
-                (new_customer.first_name, new_customer.last_name, new_customer.email, original_customer_id))
+    cur.execute("UPDATE customer SET c_first_name = ?, c_last_name = ?, c_email_address = ? WHERE c_customer_id = ?",
+                (new_customer.c_first_name, new_customer.c_last_name, new_customer.c_email_address, original_customer_id))
 
 
 
