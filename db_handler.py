@@ -94,8 +94,8 @@ def rent_item(item_id: str = None, customer_id: str = None):
     due_date = (date.today() + timedelta(days=14)).isoformat()
 
     # Inserts a row into rental with rental_date = today and due_date = today + 14 days
-    curr.execute("INSERT INTO rental (rental_date, due_date, i_item_id, c_customer_id) VALUES (?, ?, ?, ?)",
-                 (item_id, customer_id, today, due_date))
+    cur.execute("INSERT INTO rental (rental_date, due_date, item_id, customer_id) VALUES (?, ?, ?, ?)",
+                 (today, due_date, item_id, customer_id))
 
 
 def waitlist_customer(item_id: str = None, customer_id: str = None) -> int:
@@ -115,7 +115,14 @@ def return_item(item_id: str = None, customer_id: str = None):
     """
     Moves a rental from rental to rental_history with return_date = today.
     """
-    raise NotImplementedError("you must implement this function")
+
+    # set return_date to today’s date.
+    return_date = date.today().isoformat()
+    
+    # Move the rental record from rental to rental_history
+    cur.execute("INSERT INTO rental_history (rental_date, due_date, return_date, item_id, customer_id) SELECT rental_date, due_date, ?, item_id, customer_id FROM rental WHERE item_id = ? AND customer_id = ?",
+                (return_date, item_id, customer_id))
+    cur.execute("DELETE FROM rental WHERE item_id = ? AND customer_id = ?", (item_id, customer_id))
 
 
 def grant_extension(item_id: str = None, customer_id: str = None):
