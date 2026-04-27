@@ -17,40 +17,48 @@ cur = conn.cursor()
 
 def add_item(new_item: Item = None):
     """
-    i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price
     new_item - An Item object containing a new item to be inserted into the DB in the item table.
         new_item and its attributes will never be None.
     """
 
-    # Get today's date for i_rec_start_date
-    new_date = date.today().isoformat()
+    # Get new date for rec_start_date
+    new_date = f"{new_item.start_year}-01-01"
 
     # Get the max i_item_sk and add 1 to get the new i_item_sk
-    cur.execute("SELECT MAX(i_item_sk) FROM item")
+    cur.execute("SELECT COALESCE(MAX(i_item_sk), 0) FROM item")
     new_sk = cur.fetchone()[0] + 1
-    cur.execute("INSERT INTO item (i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (new_sk, new_item.i_item_id, new_date, new_item.i_product_name, new_item.i_brand, new_item.i_class, new_item.i_category, new_item.i_manufact, new_item.i_current_price))
+    cur.execute("INSERT INTO item (i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price, i_num_owned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (new_sk, new_item.item_id, new_date, new_item.product_name, new_item.brand, new_item.item_class, new_item.category, new_item.manufact, new_item.current_price, new_item.num_owned))
 
 
 def add_customer(new_customer: Customer = None):
 
     """
-    c_customer_sk, c_customer_id, c_first_name, c_last_name, c_email_address, c_current_addr_sk
     new_customer - A Customer object containing a new customer to be inserted into the DB in the customer table.
         new_customer and its attributes will never be None.
     """
-    cur.execute("SELECT MAX(c_customer_sk) FROM customer")
+    cur.execute("SELECT COALESCE(MAX(c_customer_sk), 0) FROM customer")
     new_sk = cur.fetchone()[0] + 1
 
+    cur.execute("SELECT COALESCE(MAX(ca_address_sk), 0) FROM customer_address")
+    new_addr_sk = cur.fetchone()[0] + 1
     # split new_customer.name to get first and last name
-    name_split = new_customer.c_first_name.split(" ")
-    new_first_name = name_split[0]
-    new_last_name = name_split[1]
+    first_name, last_name = new_customer.name.split(" ", 1)
 
-    # NOT DONE parse address to get c_current_addr_sk
+    # Parse address
+    street, city, state_zip = [
+        part.strip() for part in new_customer.address.split(",")
+    ]
+
+    street_number, street_name = street.split(" ", 1)
+    state, zip_code = state_zip.split(" ", 1)
+
+    cur.execute("INSERT INTO customer_address (ca_address_sk, ca_street_number, ca_street_name, ca_city, ca_state, ca_zip) VALUES (?, ?, ?, ?, ?, ?)",
+                (new_addr_sk, street_number, street_name, city, state, zip_code))
+
 
     cur.execute("INSERT INTO customer (c_customer_sk, c_customer_id, c_first_name, c_last_name, c_email_address, c_current_addr_sk) VALUES (?, ?, ?, ?, ?, ?)",
-                (new_sk, new_customer.c_customer_id, new_first_name, new_last_name, new_customer.c_email_address, new_customer.c_current_addr_sk))
+                (new_sk, new_customer.customer_id, first_name, last_name, new_customer.email, new_addr_sk))
 
 
 def edit_customer(original_customer_id: str = None, new_customer: Customer = None):
@@ -59,27 +67,27 @@ def edit_customer(original_customer_id: str = None, new_customer: Customer = Non
     new_customer - A Customer object containing attributes to update. If an attribute is None, it should not be altered.
     """
     if new_customer.name is not None:
-        name_split = new_customer.c_first_name.split(" ")
-        new_first_name = name_split[0]
-        new_last_name = name_split[1]
+        first_name, last_name = new_customer.name.split(" ", 1)
 
         cur.execute("UPDATE customer SET c_first_name = ?, c_last_name = ? WHERE c_customer_id = ?",
-                    (new_first_name, new_last_name, original_customer_id))
+                    (first_name, last_name, original_customer_id))
 
-    if new_customer.c_email_address is not None:
+    if new_customer.email is not None:
         cur.execute("UPDATE customer SET c_email_address = ? WHERE c_customer_id = ?",
-                    (new_customer.c_email_address, original_customer_id))
-    if new_customer.c_current_addr_sk is not None:
-          street_number, street_name, city, state, zip_code = [
-            part.strip() for part in new_customer.c_current_addr_sk.split(",")
+                    (new_customer.email, original_customer_id))
+    if new_customer.address is not None:
+        street, city, state_zip = [
+            part.strip() for part in new_customer.address.split(",")
     ]
+        street_number, street_name = street.split(" ", 1)
+        state, zip_code = state_zip.split(" ", 1)
 
-    cur.execute("UPDATE customer_address SET street_number = ?, street_name = ?, city = ?, state = ?, zip_code = ? WHERE c_customer_id = ?",
+        cur.execute("UPDATE customer_address SET ca_street_number = ?, ca_street_name = ?, ca_city = ?, ca_state = ?, ca_zip = ? WHERE ca_address_sk = (SELECT c_current_addr_sk FROM customer WHERE c_customer_id = ?)",
                 (street_number, street_name, city, state, zip_code, original_customer_id))
     
-    if new_customer.c_customer_id is not None:
+    if new_customer.customer_id is not None:
         cur.execute("UPDATE customer SET c_customer_id = ? WHERE c_customer_id = ?",
-                    (new_customer.c_customer_id, original_customer_id))
+                    (new_customer.customer_id, original_customer_id))
 
 
 def rent_item(item_id: str = None, customer_id: str = None):
@@ -112,7 +120,12 @@ def update_waitlist(item_id: str = None):
     """
     Removes person at position 1 and shifts everyone else down by 1.
     """
-    raise NotImplementedError("you must implement this function")
+    # Remove the person at position 1
+    cur.execute("DELETE FROM waitlist WHERE item_id = ? AND place_in_line = 1", (item_id,))
+
+    # Shift everyone else down by 1
+    cur.execute("UPDATE waitlist SET place_in_line = place_in_line - 1 WHERE item_id = ? AND place_in_line > 1", (item_id,))
+
 
 
 def return_item(item_id: str = None, customer_id: str = None):
@@ -133,7 +146,15 @@ def grant_extension(item_id: str = None, customer_id: str = None):
     """
     Adds 14 days to the due_date.
     """
-    raise NotImplementedError("you must implement this function")
+  # Get the current due date for rental
+    cur.execute("SELECT due_date FROM rental WHERE item_id = ? AND customer_id = ?", (item_id, customer_id))
+    current_due_date = date.fromisoformat(str(current_due_date))
+
+    # Add 14 days to the current due date
+    new_due_date = (current_due_date + timedelta(days=14)).isoformat()
+
+    # Update the rental record with the new due date
+    cur.execute("UPDATE rental SET due_date = ? WHERE item_id = ? AND customer_id = ?", (new_due_date, item_id, customer_id))
 
 
 def get_filtered_items(filter_attributes: Item = None,
