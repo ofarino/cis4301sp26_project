@@ -1,5 +1,3 @@
-from uuid import MAX
-
 from MARIADB_CREDS import DB_CONFIG
 from mariadb import connect
 from models.RentalHistory import RentalHistory
