@@ -374,7 +374,45 @@ def get_filtered_waitlist(filter_attributes: Waitlist = None,
     """
     Returns a list of Waitlist objects matching the filters.
     """
-    raise NotImplementedError("you must implement this function")
+    query = "SELECT item_id, customer_id, place_in_line FROM waitlist"
+
+    conditions = []
+    params = []
+
+    # Add attribute filters
+    if filter_attributes is not None:
+        if filter_attributes.item_id is not None:
+            conditions.append(f"item_id = ?")
+            params.append(filter_attributes.item_id)
+
+        if filter_attributes.customer_id is not None:
+            conditions.append(f"customer_id = ?")
+            params.append(filter_attributes.customer_id)
+
+        if filter_attributes.place_in_line not in (None, -1):
+            conditions.append("place_in_line = ?")
+            params.append(filter_attributes.place_in_line)
+
+    # Add place_in_line range conditions
+    if min_place_in_line != -1:
+        conditions.append("place_in_line >= ?")
+        params.append(min_place_in_line)
+    if max_place_in_line != -1:
+        conditions.append("place_in_line <= ?")
+        params.append(max_place_in_line)
+        
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    cur.execute(query, params)
+    rows = cur.fetchall()
+    return [
+        Waitlist(
+            item_id=row[0].strip() if row[0] is not None else None,
+            customer_id=row[1].strip() if row[1] is not None else None,
+            place_in_line=row[2]
+        )
+        for row in rows
+    ]
 
 
 def number_in_stock(item_id: str = None) -> int:
