@@ -330,22 +330,38 @@ def number_in_stock(item_id: str = None) -> int:
     """
     Returns num_owned - active rentals. Returns -1 if item doesn't exist.
     """
-    raise NotImplementedError("you must implement this function")
+    # check if item exists
+    cur.execute("SELECT i_num_owned FROM item WHERE i_item_id = ?", (item_id,))
+    result = cur.fetchone()
+    if result is None:
+        return -1
+    # get num_owned
+    num_owned = result[0]
+    # get active rentals
+    cur.execute("SELECT COUNT(*) FROM rental WHERE item_id = ?", (item_id,))
+    active_rentals = cur.fetchone()[0]
+    # return num_owned - active rentals
+    return num_owned - active_rentals
 
 
 def place_in_line(item_id: str = None, customer_id: str = None) -> int:
     """
     Returns the customer's place_in_line, or -1 if not on waitlist.
     """
-    raise NotImplementedError("you must implement this function")
+    cur.execute("SELECT place_in_line FROM waitlist WHERE item_id = ? AND customer_id = ?", (item_id, customer_id))
+    result = cur.fetchone()
+    if result is None:
+        return -1
+    return result[0]
 
 
 def line_length(item_id: str = None) -> int:
     """
     Returns how many people are on the waitlist for this item.
     """
-    raise NotImplementedError("you must implement this function")
-
+    cur.execute("SELECT COUNT(*) FROM waitlist WHERE item_id = ?", (item_id,))
+    result = cur.fetchone()
+    return result[0]
 
 def save_changes():
     """
