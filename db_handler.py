@@ -251,8 +251,47 @@ def get_filtered_customers(filter_attributes: Customer = None, use_patterns: boo
     """
     Returns a list of Customer objects matching the filters.
     """
-    raise NotImplementedError("you must implement this function")
+    query = "SELECT c_customer_id, CONCAT(c_first_name, ' ', c_last_name) AS name, c_email_address, CONCAT(ca_street_number, ' ', ca_street_name, ', ', ca_city, ', ', ca_state, ' ', ca_zip) AS address FROM customer JOIN customer_address ON c_current_addr_sk = ca_address_sk"
+    
+    conditions = []
+    params = []
 
+    # Add attribute filters 
+    if filter_attributes is not None:
+        op = "LIKE" if use_patterns else "="
+        def x(s):
+            return f"%{s}%" if use_patterns else s
+        if filter_attributes.customer_id is not None:
+            conditions.append(f"c_customer_id {op} ?")
+            params.append(x(filter_attributes.customer_id))
+
+        if filter_attributes.name is not None:
+            conditions.append(f"CONCAT(c_first_name, ' ', c_last_name) {op} ?")
+            params.append(x(filter_attributes.name))
+
+        if filter_attributes.email is not None:
+            conditions.append(f"c_email_address {op} ?")
+            params.append(x(filter_attributes.email))
+
+        if filter_attributes.address is not None:
+            conditions.append(f"CONCAT(ca_street_number, ' ', ca_street_name, ', ', ca_city, ', ', ca_state, ' ', ca_zip) {op} ?")
+            params.append(x(filter_attributes.address))
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    cur.execute(query, params)
+    rows = cur.fetchall()
+
+    return [
+        Customer(
+            customer_id=row[0].strip() if row[0] is not None else None,
+            name=row[1].strip() if row[1] is not None else None,
+            email=row[2].strip() if row[2] is not None else None,
+            address=row[3].strip() if row[3] is not None else None
+        )
+        for row in rows
+    ]
 
 def get_filtered_rentals(filter_attributes: Rental = None,
                          min_rental_date: str = None,
