@@ -166,8 +166,86 @@ def get_filtered_items(filter_attributes: Item = None,
     """
     Returns a list of Item objects matching the filters.
     """
-    raise NotImplementedError("you must implement this function")
+    query = "SELECT i_item_id, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price, YEAR(i_rec_start_date), i_num_owned FROM item"
 
+    conditions = []
+    params = []
+
+    # Add attribute filters
+    if filter_attributes is not None:
+        op = "LIKE" if use_patterns else "="
+        def x(s):
+            return f"%{s}%" if use_patterns else s
+        if filter_attributes.item_id is not None:
+            conditions.append(f"i_item_id {op} ?")
+            params.append(x(filter_attributes.item_id))
+
+        if filter_attributes.product_name is not None:
+            conditions.append(f"i_product_name {op} ?")
+            params.append(x(filter_attributes.product_name))
+            
+        if filter_attributes.brand is not None:
+            conditions.append(f"i_brand {op} ?")
+            params.append(x(filter_attributes.brand))
+
+        if filter_attributes.item_class is not None:
+            conditions.append(f"i_class {op} ?")
+            params.append(x(filter_attributes.item_class))
+
+        if filter_attributes.category is not None:
+            conditions.append(f"i_category {op} ?")
+            params.append(x(filter_attributes.category))
+            
+        if filter_attributes.manufact is not None:
+            conditions.append(f"i_manufact {op} ?")
+            params.append(x(filter_attributes.manufact))
+
+        if filter_attributes.current_price not in (None, -1):
+            conditions.append("i_current_price = ?")
+            params.append(filter_attributes.current_price)
+
+        if filter_attributes.start_year not in (None, -1):
+            conditions.append("YEAR(i_rec_start_date) = ?")
+            params.append(filter_attributes.start_year)
+
+        if filter_attributes.num_owned not in (None, -1):
+            conditions.append("i_num_owned = ?")
+            params.append(filter_attributes.num_owned)
+
+    # Add price range conditions
+    if min_price != -1:
+        conditions.append("i_current_price >= ?")
+        params.append(min_price)
+    if max_price != -1:
+        conditions.append("i_current_price <= ?")
+        params.append(max_price)
+
+    # Add start year range conditions
+    if min_start_year != -1:
+        conditions.append("YEAR(i_rec_start_date) >= ?")
+        params.append(min_start_year)
+    if max_start_year != -1:
+        conditions.append("YEAR(i_rec_start_date) <= ?")
+        params.append(max_start_year)
+    
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    cur.execute(query, params)
+    rows = cur.fetchall()
+   
+    return [
+        Item(
+            item_id=row[0].strip() if row[0] is not None else None, 
+            product_name=row[1].strip() if row[1] is not None else None, 
+            brand=row[2].strip() if row[2] is not None else None, 
+            item_class=row[3].strip() if row[3] is not None else None, 
+            category=row[4].strip() if row[4] is not None else None, 
+            manufact=row[5].strip() if row[5] is not None else None, 
+            current_price=row[6], start_year=row[7], num_owned=row[8]
+            ) 
+        for row in rows
+    ]
 
 def get_filtered_customers(filter_attributes: Customer = None, use_patterns: bool = False) -> list[Customer]:
     """
