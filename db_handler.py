@@ -87,8 +87,15 @@ def rent_item(item_id: str = None, customer_id: str = None):
     item_id - A string containing the Item ID for the item being rented.
     customer_id - A string containing the customer id of the customer renting the item.
     """
+    # todays date
+    today = date.today().isoformat()
+
+    # due date is 14 days from today
+    due_date = (date.today() + timedelta(days=14)).isoformat()
+
     # Inserts a row into rental with rental_date = today and due_date = today + 14 days
-    curr.execute("INSERT INTO rental (rental_date, due_date) VALUES (DATE('now'), DATE('now', '+14 days'))")
+    curr.execute("INSERT INTO rental (rental_date, due_date, i_item_id, c_customer_id) VALUES (?, ?, ?, ?)",
+                 (item_id, customer_id, today, due_date))
 
 
 def waitlist_customer(item_id: str = None, customer_id: str = None) -> int:
