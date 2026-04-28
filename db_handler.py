@@ -148,7 +148,9 @@ def grant_extension(item_id: str = None, customer_id: str = None):
     """
   # Get the current due date for rental
     cur.execute("SELECT due_date FROM rental WHERE item_id = ? AND customer_id = ?", (item_id, customer_id))
-    current_due_date = date.fromisoformat(str(current_due_date))
+
+    row = cur.fetchone()
+    current_due_date = date.fromisoformat(str(row[0]))
 
     # Add 14 days to the current due date
     new_due_date = (current_due_date + timedelta(days=14)).isoformat()
