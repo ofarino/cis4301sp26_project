@@ -365,7 +365,67 @@ def get_filtered_rental_histories(filter_attributes: RentalHistory = None,
     """
     Returns a list of RentalHistory objects matching the filters.
     """
-    raise NotImplementedError("you must implement this function")
+    query = "SELECT rental_date, due_date, return_date, item_id, customer_id FROM rental_history"
+
+    conditions = []
+    params = []
+
+    # Add attribute filters
+    if filter_attributes is not None:
+        if filter_attributes.rental_date is not None:
+            conditions.append("rental_date = ?")
+            params.append(filter_attributes.rental_date)
+
+        if filter_attributes.due_date is not None:
+            conditions.append("due_date = ?")
+            params.append(filter_attributes.due_date)
+
+        if filter_attributes.return_date is not None:
+            conditions.append("return_date = ?")
+            params.append(filter_attributes.return_date)
+
+        if filter_attributes.item_id is not None:
+            conditions.append("item_id = ?")
+            params.append(filter_attributes.item_id)
+
+        if filter_attributes.customer_id is not None:
+            conditions.append("customer_id = ?")
+            params.append(filter_attributes.customer_id)
+
+    # Add date range conditions
+    if min_rental_date is not None:
+        conditions.append("rental_date >= ?")
+        params.append(min_rental_date)
+    if max_rental_date is not None:
+        conditions.append("rental_date <= ?")
+        params.append(max_rental_date)
+    if min_due_date is not None:
+        conditions.append("due_date >= ?")
+        params.append(min_due_date)
+    if max_due_date is not None:
+        conditions.append("due_date <= ?")
+        params.append(max_due_date)
+    if min_return_date is not None:
+        conditions.append("return_date >= ?")
+        params.append(min_return_date)
+    if max_return_date is not None:
+        conditions.append("return_date <= ?")
+        params.append(max_return_date)  
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    cur.execute(query, params)
+    rows = cur.fetchall()       
+    return [
+        RentalHistory(
+            rental_date=row[0].isoformat() if row[0] is not None else None,
+            due_date=row[1].isoformat() if row[1] is not None else None,
+            return_date=row[2].isoformat() if row[2] is not None else None,
+            item_id=row[3].strip() if row[3] is not None else None,
+            customer_id=row[4].strip() if row[4] is not None else None
+        )
+        for row in rows
+    ]            
 
 
 def get_filtered_waitlist(filter_attributes: Waitlist = None,
