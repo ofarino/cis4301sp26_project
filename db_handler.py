@@ -27,8 +27,8 @@ def add_item(new_item: Item = None):
     # Get the max i_item_sk and add 1 to get the new i_item_sk
     cur.execute("SELECT COALESCE(MAX(i_item_sk), 0) FROM item")
     new_sk = cur.fetchone()[0] + 1
-    cur.execute("INSERT INTO item (i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price, i_num_owned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (new_sk, new_item.item_id, new_date, new_item.product_name, new_item.brand, new_item.item_class, new_item.category, new_item.manufact, new_item.current_price, new_item.num_owned))
+    cur.execute("INSERT INTO item (i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_category, i_manufact, i_current_price, i_num_owned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (new_sk, new_item.item_id, new_date, new_item.product_name, new_item.brand, new_item.category, new_item.manufact, new_item.current_price, new_item.num_owned))
 
 
 def add_customer(new_customer: Customer = None):
@@ -168,7 +168,7 @@ def get_filtered_items(filter_attributes: Item = None,
     """
     Returns a list of Item objects matching the filters.
     """
-    query = "SELECT i_item_id, i_product_name, i_brand, i_class, i_category, i_manufact, i_current_price, YEAR(i_rec_start_date), i_num_owned FROM item"
+    query = "SELECT i_item_id, i_product_name, i_brand, i_category, i_manufact, i_current_price, YEAR(i_rec_start_date), i_num_owned FROM item"
 
     conditions = []
     params = []
@@ -189,10 +189,6 @@ def get_filtered_items(filter_attributes: Item = None,
         if filter_attributes.brand is not None:
             conditions.append(f"i_brand {op} ?")
             params.append(x(filter_attributes.brand))
-
-        if filter_attributes.item_class is not None:
-            conditions.append(f"i_class {op} ?")
-            params.append(x(filter_attributes.item_class))
 
         if filter_attributes.category is not None:
             conditions.append(f"i_category {op} ?")
@@ -241,10 +237,9 @@ def get_filtered_items(filter_attributes: Item = None,
             item_id=row[0].strip() if row[0] is not None else None, 
             product_name=row[1].strip() if row[1] is not None else None, 
             brand=row[2].strip() if row[2] is not None else None, 
-            item_class=row[3].strip() if row[3] is not None else None, 
-            category=row[4].strip() if row[4] is not None else None, 
-            manufact=row[5].strip() if row[5] is not None else None, 
-            current_price=row[6], start_year=row[7], num_owned=row[8]
+            category=row[3].strip() if row[3] is not None else None, 
+            manufact=row[4].strip() if row[4] is not None else None, 
+            current_price=row[5], start_year=row[6], num_owned=row[7]
             ) 
         for row in rows
     ]
