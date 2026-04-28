@@ -27,7 +27,7 @@ def add_item(new_item: Item = None):
     # Get the max i_item_sk and add 1 to get the new i_item_sk
     cur.execute("SELECT COALESCE(MAX(i_item_sk), 0) FROM item")
     new_sk = cur.fetchone()[0] + 1
-    cur.execute("INSERT INTO item (i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_category, i_manufact, i_current_price, i_num_owned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    cur.execute("INSERT INTO item (i_item_sk, i_item_id, i_rec_start_date, i_product_name, i_brand, i_category, i_manufact, i_current_price, i_num_owned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (new_sk, new_item.item_id, new_date, new_item.product_name, new_item.brand, new_item.category, new_item.manufact, new_item.current_price, new_item.num_owned))
 
 
